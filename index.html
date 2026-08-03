@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Lokalny panel organizacyjny wyjazdu do Chorwacji dla 7 osób.">
+  <title>Chorwacja 2027 — panel wyjazdu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .participant-dropdown{width:230px;padding:9px}.participant-dropdown>p{margin:4px 8px 7px;color:var(--muted);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px}.participant-dropdown #participantOptions{display:grid;gap:2px}.participant-dropdown #participantOptions button{display:flex;align-items:center;gap:9px}.participant-dropdown #participantOptions button.active{background:var(--mint);color:var(--teal-dark)}.mini-avatar{width:25px;height:25px;border-radius:50%;display:grid;place-items:center;background:#e5efeb;font-size:9px;font-weight:800}.logout-admin{border-top:1px solid var(--line)!important;margin-top:7px;color:#a24738!important}.split-field{border:1px solid var(--line);border-radius:12px;margin:19px 0 0;padding:14px}.split-field legend{padding:0 6px;font-size:13px;font-weight:700}.split-actions{display:flex;gap:12px;margin-bottom:10px}.split-actions button{border:0;background:none;padding:0;color:var(--teal);font-size:11px;font-weight:700}.participant-checks{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}.participant-checks label{display:flex;align-items:center;gap:8px;margin:0;padding:8px;border-radius:9px;background:var(--paper);font-size:12px}.participant-checks input{width:auto;accent-color:var(--teal)}.split-preview{margin:11px 0 0;color:var(--teal-dark);font-size:12px;font-weight:700}.route-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:17px}.route-stats article{display:grid;gap:5px;padding:18px;background:var(--ink);color:white;border-radius:15px}.route-stats span{font-size:11px;color:#b8cbc6}.route-stats strong{font:800 22px Manrope}.interactive-map-card{padding:10px;margin-bottom:17px;overflow:hidden}.map-toolbar{display:flex;justify-content:space-between;align-items:center;padding:8px 10px 14px}.map-toolbar h2{font:800 16px Manrope;margin:0}.map-toolbar span{font-size:10px;color:var(--muted)}#routeMap{height:430px;border-radius:14px;background:#e9efec;z-index:1}.route-map-marker{width:30px;height:30px;display:grid;place-items:center;border:4px solid white;border-radius:50%;background:var(--teal);color:white;font:800 11px Manrope;box-shadow:0 3px 10px rgba(10,70,62,.3)}.route-map-marker.destination{background:var(--coral)}.leaflet-popup-content-wrapper{border-radius:12px}.map-popup h3{margin:0 0 4px;font:800 14px Manrope}.map-popup p{margin:0;color:#6e7f7b;font-size:11px}.map-fallback{height:100%;display:grid;place-items:center;padding:30px;text-align:center;color:var(--muted)}.route-layout{display:grid;grid-template-columns:1.08fr .92fr;gap:17px}.route-stops{position:relative}.route-stops:before{content:'';position:absolute;left:18px;top:20px;bottom:20px;border-left:2px solid #cfe2dc}.route-stop{position:relative;display:grid;grid-template-columns:38px 1fr auto;gap:12px;align-items:center;padding:10px 0}.stop-dot{z-index:1;width:38px;height:38px;display:grid;place-items:center;border:6px solid white;border-radius:50%;background:var(--teal);color:white;font-size:10px;font-weight:800}.route-stop h3{margin:0 0 3px;font:800 14px Manrope}.route-stop p{margin:0;color:var(--muted);font-size:11px}.route-stop a{color:var(--teal);font-size:11px;font-weight:700;text-decoration:none}.fuel-form{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.fuel-form label{margin:0;font-size:11px}.fuel-form input{padding:10px}.fuel-result{display:grid;gap:10px;margin:20px 0}.fuel-result>div{display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;border-bottom:1px solid var(--line)}.fuel-result span{font-size:12px;color:var(--muted)}.fuel-result strong{font:800 20px Manrope}.fuel-result>div:nth-child(2) strong{color:var(--coral)}.full-width{width:100%}.fuel-note{font-size:10px;line-height:1.5}.expense-split{display:block;margin-top:3px;color:var(--teal);font-size:10px}.map-link{text-decoration:none}@media(max-width:950px){.route-layout{grid-template-columns:1fr}.fuel-form{grid-template-columns:1fr 1fr}}@media(max-width:620px){.route-stats{grid-template-columns:1fr}.fuel-form,.participant-checks{grid-template-columns:1fr}.route-stop{grid-template-columns:38px 1fr}.route-stop a{grid-column:2}#routeMap{height:350px}.map-toolbar{align-items:flex-start;gap:6px;flex-direction:column}}
+  </style>
+</head>
+<body>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <div id="appView" class="app-view">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand"><span class="brand-mark">C</span><span>Chorwacja<br><small>2027 · Makarska</small></span></div>
+      <nav id="mainNav">
+        <button data-view="dashboard" class="active"><span>⌂</span> Pulpit</button>
+        <button data-view="expenses"><span>↗</span> Wydatki</button>
+        <button data-view="payments"><span>◎</span> Wpłaty</button>
+        <button data-view="checklist"><span>✓</span> Checklista</button>
+        <button data-view="plan"><span>▦</span> Plan podróży</button>
+        <button data-view="route"><span>⌖</span> Trasa i paliwo</button>
+        <button data-view="settings" class="admin-only"><span>⚙</span> Dane wyjazdu</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="demo-badge">DEMO · zapis lokalny</div>
+        <button id="resetData" class="text-button admin-only">Przywróć dane startowe</button>
+      </div>
+    </aside>
+
+    <div class="main-shell">
+      <header class="topbar">
+        <button id="menuBtn" class="icon-btn menu-btn" aria-label="Otwórz menu">☰</button>
+        <div class="top-trip"><strong id="topTripName">Chorwacja 2027</strong><span id="topDates">15–24 sierpnia 2027</span></div>
+        <div class="top-actions">
+          <span id="rolePill" class="role-pill"></span>
+          <div class="user-menu"><button id="userBtn" class="user-button"><span id="userAvatar" class="avatar"></span><span class="user-label"><strong id="userName"></strong><small id="userRole"></small></span><span>⌄</span></button>
+            <div id="userDropdown" class="dropdown participant-dropdown hidden"><p>Wybierz uczestnika</p><div id="participantOptions"></div><button id="logoutBtn" class="admin-only logout-admin">Wyłącz tryb administratora</button></div>
+          </div>
+        </div>
+      </header>
+      <main class="content">
+        <div class="demo-warning">⚠ <strong>Wersja demonstracyjna:</strong> dane są przechowywane tylko w tej przeglądarce (localStorage). Nie używaj prawdziwych haseł ani danych wrażliwych.</div>
+
+        <section id="view-dashboard" class="view active">
+          <div class="page-heading"><div><p class="eyebrow teal">PODSUMOWANIE WYJAZDU</p><h1>Hej, <span id="welcomeName"></span>! 👋</h1><p class="muted">Zobacz, jak idą przygotowania do Makarskiej.</p></div><div class="countdown"><small>DO WYJAZDU</small><strong id="daysLeft">—</strong><span>dni</span></div></div>
+          <div class="stats-grid">
+            <article class="stat-card"><div class="stat-icon mint">⌁</div><div><span>Budżet grupy</span><strong id="statBudget"></strong><small id="statPerPerson"></small></div></article>
+            <article class="stat-card"><div class="stat-icon coral">↗</div><div><span>Wydano</span><strong id="statSpent"></strong><small id="statRemaining"></small></div></article>
+            <article class="stat-card"><div class="stat-icon blue">◎</div><div><span>Zebrane wpłaty</span><strong id="statPaid"></strong><small id="statPaidProgress"></small></div></article>
+            <article class="stat-card"><div class="stat-icon yellow">✓</div><div><span>Gotowość</span><strong id="statReady"></strong><small id="statTasks"></small></div></article>
+          </div>
+          <div class="dashboard-grid">
+            <article class="card budget-card"><div class="card-header"><div><p class="eyebrow teal">BUDŻET</p><h2>Stan finansów</h2></div><button class="link-button" data-goto="expenses">Szczegóły →</button></div><div class="budget-visual"><div class="donut" id="budgetDonut"><div><strong id="donutPercent"></strong><span>wykorzystano</span></div></div><div class="budget-legend"><div><i class="dot spent"></i><span>Wydano</span><strong id="legendSpent"></strong></div><div><i class="dot planned"></i><span>Zaplanowane</span><strong id="legendPlanned"></strong></div><div><i class="dot free"></i><span>Wolne środki</span><strong id="legendFree"></strong></div></div></div></article>
+            <article class="card"><div class="card-header"><div><p class="eyebrow teal">NAJBLIŻSZE</p><h2>Plan podróży</h2></div><button class="link-button" data-goto="plan">Cały plan →</button></div><div id="dashboardPlan" class="mini-timeline"></div></article>
+            <article class="card payments-preview"><div class="card-header"><div><p class="eyebrow teal">UCZESTNICY</p><h2>Wpłaty grupy</h2></div><button class="link-button" data-goto="payments">Wszystkie →</button></div><div id="dashboardPayments"></div></article>
+            <article class="card"><div class="card-header"><div><p class="eyebrow teal">DO ZROBIENIA</p><h2>Najważniejsze zadania</h2></div><button class="link-button" data-goto="checklist">Checklista →</button></div><div id="dashboardTasks" class="task-preview"></div></article>
+          </div>
+        </section>
+
+        <section id="view-expenses" class="view">
+          <div class="page-heading"><div><p class="eyebrow teal">FINANSE</p><h1>Wydatki</h1><p class="muted">Śledź zaplanowane i poniesione koszty.</p></div><button id="addExpenseBtn" class="btn primary">+ Dodaj wydatek</button></div>
+          <div class="stats-grid compact"><article class="stat-card"><div><span>Budżet</span><strong id="expenseBudget"></strong></div></article><article class="stat-card"><div><span>Zaplanowane</span><strong id="expensePlanned"></strong></div></article><article class="stat-card"><div><span>Zapłacone</span><strong id="expensePaid"></strong></div></article></div>
+          <article class="card table-card"><div class="table-tools"><input id="expenseSearch" type="search" placeholder="Szukaj wydatku…"><select id="expenseFilter"><option value="all">Wszystkie statusy</option><option value="paid">Zapłacone</option><option value="planned">Planowane</option></select></div><div class="table-wrap"><table><thead><tr><th>Wydatek</th><th>Kategoria</th><th>Kwota i podział</th><th>Status</th><th>Dodał(a)</th><th></th></tr></thead><tbody id="expenseTable"></tbody></table></div><div id="expenseEmpty" class="empty hidden">Brak pasujących wydatków.</div></article>
+        </section>
+
+        <section id="view-payments" class="view">
+          <div class="page-heading"><div><p class="eyebrow teal">ROZLICZENIA</p><h1>Wpłaty uczestników</h1><p class="muted">Cel na osobę: <strong id="paymentTarget"></strong></p></div></div>
+          <div id="paymentsGrid" class="people-grid"></div>
+        </section>
+
+        <section id="view-checklist" class="view">
+          <div class="page-heading"><div><p class="eyebrow teal">PRZYGOTOWANIA</p><h1>Checklista</h1><p class="muted" id="checklistHelp"></p></div><button id="addTaskBtn" class="btn primary admin-only">+ Dodaj zadanie</button></div>
+          <div class="progress-card"><div><strong id="checklistPercent"></strong><span>gotowe</span></div><div class="progress"><i id="checklistProgress"></i></div><small id="checklistCount"></small></div>
+          <div id="checklistGroups" class="checklist-groups"></div>
+        </section>
+
+        <section id="view-plan" class="view">
+          <div class="page-heading"><div><p class="eyebrow teal">10 DNI W DRODZE</p><h1>Plan podróży</h1><p class="muted">Trasa Gdańsk — Makarska — Gdańsk.</p></div><button id="addPlanBtn" class="btn primary admin-only">+ Dodaj punkt</button></div>
+          <div id="planTimeline" class="plan-timeline"></div>
+        </section>
+
+        <section id="view-route" class="view">
+          <div class="page-heading"><div><p class="eyebrow teal">GDAŃSK → MAKARSKA → GDAŃSK</p><h1>Trasa i kalkulator paliwa</h1><p class="muted">Przystanki, orientacyjny czas przejazdu i koszt tankowania.</p></div><a id="googleRouteLink" class="btn primary map-link" target="_blank" rel="noopener">Otwórz w Google Maps ↗</a></div>
+          <div class="route-stats"><article><span>Dystans w obie strony</span><strong id="routeDistanceStat">3 600 km</strong></article><article><span>Jazda bez dłuższych postojów</span><strong>około 38 godz.</strong></article><article><span>Państwa na trasie</span><strong>6</strong></article></div>
+          <article class="card interactive-map-card"><div class="map-toolbar"><h2>Interaktywna mapa przejazdu</h2><span>Przeciągaj mapę, przybliżaj i klikaj znaczniki</span></div><div id="routeMap" aria-label="Interaktywna mapa trasy z Gdańska do Makarskiej"><div class="map-fallback">Ładowanie mapy…</div></div></article>
+          <div class="route-layout">
+            <article class="card route-card"><div class="card-header"><div><p class="eyebrow teal">PROPONOWANA TRASA</p><h2>Przystanki po drodze</h2></div></div><div id="routeStops" class="route-stops"></div></article>
+            <article class="card fuel-card"><div class="card-header"><div><p class="eyebrow teal">KALKULATOR</p><h2>Koszt paliwa</h2></div></div><form id="fuelForm" class="fuel-form"><label>Dystans łącznie (km)<input id="fuelDistance" type="number" min="1" step="1"></label><label>Spalanie busa (l/100 km)<input id="fuelConsumption" type="number" min="1" step="0.1"></label><label>Cena paliwa (zł/l)<input id="fuelPrice" type="number" min="0.01" step="0.01"></label></form><div class="fuel-result"><div><span>Potrzebne paliwo</span><strong id="fuelLiters"></strong></div><div><span>Łączny koszt</span><strong id="fuelTotal"></strong></div><div><span>Koszt na osobę</span><strong id="fuelPerPerson"></strong></div></div><button id="saveFuelExpense" class="btn secondary full-width admin-only">Zaktualizuj wydatek „Paliwo”</button><p class="muted fuel-note">Wynik jest orientacyjny i nie uwzględnia winiet, parkingów ani opłat drogowych.</p></article>
+          </div>
+        </section>
+
+        <section id="view-settings" class="view admin-only">
+          <div class="page-heading"><div><p class="eyebrow teal">ADMINISTRACJA</p><h1>Dane wyjazdu</h1><p class="muted">Zmiany są widoczne od razu w całym panelu.</p></div></div>
+          <form id="tripForm" class="card form-grid"><label>Nazwa wyjazdu<input id="tripName" required></label><label>Miejsce docelowe<input id="tripDestination" required></label><label>Data wyjazdu<input id="tripStart" type="date" required></label><label>Data powrotu<input id="tripEnd" type="date" required></label><label>Liczba uczestników<input id="tripPeople" type="number" min="1" required></label><label>Budżet grupy (zł)<input id="tripBudget" type="number" min="0" step="1" required></label><label class="wide">Opis<textarea id="tripDescription" rows="3"></textarea></label><div class="wide form-actions"><button class="btn primary" type="submit">Zapisz dane wyjazdu</button></div></form>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <dialog id="expenseDialog"><form id="expenseForm" class="dialog-card"><div class="dialog-head"><div><p class="eyebrow teal">WYDATEK</p><h2 id="expenseDialogTitle">Dodaj wydatek</h2></div><button type="button" class="close-dialog">×</button></div><input id="expenseId" type="hidden"><label>Nazwa<input id="expenseName" required maxlength="60" placeholder="np. Zakupy spożywcze"></label><div class="form-grid two"><label>Kwota (zł)<input id="expenseAmount" type="number" min="0.01" step="0.01" required></label><label>Kategoria<select id="expenseCategory"><option>Transport</option><option>Nocleg</option><option>Jedzenie</option><option>Atrakcje</option><option>Wyposażenie</option><option>Inne</option></select></label><label>Status<select id="expenseStatus"><option value="planned">Planowane</option><option value="paid">Zapłacone</option></select></label><label>Data<input id="expenseDate" type="date" required></label></div><fieldset class="split-field"><legend>Podziel koszt pomiędzy</legend><div class="split-actions"><button id="selectAllParticipants" type="button">Zaznacz wszystkich</button><button id="clearParticipants" type="button">Wyczyść</button></div><div id="expenseParticipants" class="participant-checks"></div><p id="splitPreview" class="split-preview"></p></fieldset><label>Notatka<textarea id="expenseNote" rows="2"></textarea></label><div class="dialog-actions"><button type="button" class="btn secondary close-dialog">Anuluj</button><button class="btn primary" type="submit">Zapisz</button></div></form></dialog>
+
+  <dialog id="taskDialog"><form id="taskForm" class="dialog-card"><div class="dialog-head"><div><p class="eyebrow teal">CHECKLISTA</p><h2>Dodaj zadanie</h2></div><button type="button" class="close-dialog">×</button></div><label>Nazwa zadania<input id="taskTitle" required maxlength="80"></label><label>Kategoria<select id="taskCategory"><option>Dokumenty</option><option>Transport</option><option>Zakupy i wyposażenie</option><option>Rezerwacje</option><option>Inne</option></select></label><label>Przypisz do<select id="taskAssignee"></select></label><div class="dialog-actions"><button type="button" class="btn secondary close-dialog">Anuluj</button><button class="btn primary" type="submit">Dodaj</button></div></form></dialog>
+
+  <dialog id="planDialog"><form id="planForm" class="dialog-card"><div class="dialog-head"><div><p class="eyebrow teal">PLAN</p><h2 id="planDialogTitle">Dodaj punkt planu</h2></div><button type="button" class="close-dialog">×</button></div><input id="planId" type="hidden"><div class="form-grid two"><label>Dzień<input id="planDay" type="number" min="1" max="30" required></label><label>Data<input id="planDate" type="date" required></label></div><label>Tytuł<input id="planTitle" required maxlength="80"></label><label>Opis<textarea id="planDescription" rows="3" required></textarea></label><div class="dialog-actions"><button type="button" class="btn secondary close-dialog">Anuluj</button><button class="btn primary" type="submit">Zapisz</button></div></form></dialog>
+
+  <dialog id="confirmDialog"><div class="dialog-card small"><h2 id="confirmTitle">Potwierdź</h2><p id="confirmText" class="muted"></p><div class="dialog-actions"><button id="confirmCancel" class="btn secondary">Anuluj</button><button id="confirmOk" class="btn danger">Usuń</button></div></div></dialog>
+  <dialog id="adminLoginDialog"><form id="adminLoginForm" class="dialog-card small"><div class="dialog-head"><div><p class="eyebrow teal">TRYB ADMINISTRATORA</p><h2>Odblokuj edycję</h2></div><button type="button" class="close-dialog">×</button></div><p class="muted">Podaj hasło administratora, aby zarządzać wspólnymi danymi wyjazdu.</p><label>Hasło<input id="adminPassword" type="password" inputmode="numeric" maxlength="4" autocomplete="current-password" required></label><p id="adminLoginError" class="form-error" aria-live="polite"></p><div class="dialog-actions"><button type="button" class="btn secondary close-dialog">Anuluj</button><button class="btn primary" type="submit">Włącz tryb administratora</button></div><p class="shortcut-hint">Skrót: <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>A</kbd></p></form></dialog>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="script.js"></script>
+</body>
+</html>
