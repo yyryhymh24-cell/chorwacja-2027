@@ -2,11 +2,13 @@ const STORAGE_KEY='chorwacja2027_demo_v1';
 const SESSION_KEY='chorwacja2027_session';
 const SELECTED_USER_KEY='chorwacja2027_selected_user';
 const REMOTE_TRIP_ID='00000000-0000-0000-0000-000000002027';
+const CHECKLIST_VERSION=2;
 const deepCopy=o=>JSON.parse(JSON.stringify(o));
 const id=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const PARTICIPANT_NAMES={admin:'Bartosz',u1:'Dominika',u2:'Agnieszka',u3:'Michał',u4:'Karolina',u5:'Damian',u6:'Krzyś'};
 const initialData={
  trip:{name:'Chorwacja 2027',destination:'Makarska, Chorwacja',start:'2027-08-15',end:'2027-08-24',people:7,budget:24800,description:'10-dniowy wyjazd busem z Gdańska do Makarskiej.'},
+ checklistVersion:CHECKLIST_VERSION,
  users:[
   {id:'admin',name:'Bartosz',role:'admin',pin:'2027'},
   {id:'u1',name:'Dominika',role:'user',pin:'1234'},{id:'u2',name:'Agnieszka',role:'user',pin:'1234'},
@@ -23,14 +25,29 @@ const initialData={
   {id:'e7',name:'Wyposażenie wspólne',category:'Wyposażenie',amount:900,status:'planned',date:'2027-08-01',owner:'admin',note:''},
   {id:'e8',name:'Rezerwa awaryjna',category:'Inne',amount:800,status:'planned',date:'2027-08-15',owner:'admin',note:''}],
  tasks:[
-  {id:'t1',title:'Sprawdzić dowody osobiste i EKUZ',category:'Dokumenty',assignee:'all',doneBy:['admin','u1','u2']},
-  {id:'t2',title:'Pobrać mapy offline i playlistę',category:'Transport',assignee:'all',doneBy:['admin','u3']},
-  {id:'t3',title:'Potwierdzić rezerwację busa',category:'Rezerwacje',assignee:'admin',doneBy:['admin']},
-  {id:'t4',title:'Potwierdzić apartament w Makarskiej',category:'Rezerwacje',assignee:'admin',doneBy:[]},
-  {id:'t5',title:'Kupić apteczkę i leki na chorobę lokomocyjną',category:'Zakupy i wyposażenie',assignee:'u2',doneBy:[]},
-  {id:'t6',title:'Zabrać ładowarki, powerbanki i rozdzielacz',category:'Zakupy i wyposażenie',assignee:'all',doneBy:['u1','u4']},
-  {id:'t7',title:'Przygotować torbę termiczną i wodę na trasę',category:'Zakupy i wyposażenie',assignee:'u5',doneBy:[]},
-  {id:'t8',title:'Sprawdzić assistance i ubezpieczenie',category:'Dokumenty',assignee:'admin',doneBy:[]}],
+  {id:'ck1',title:'Dowody osobiste lub paszporty — ważne przez cały wyjazd',category:'📄 Dokumenty i finanse',assignee:'all',doneBy:[]},
+  {id:'ck2',title:'Prawa jazdy — minimum 2 osoby z kategorią B do rotacji kierowców',category:'📄 Dokumenty i finanse',assignee:'all',doneBy:[]},
+  {id:'ck3',title:'ISIC lub legitymacje studenckie — zniżki w parkach i muzeach',category:'📄 Dokumenty i finanse',assignee:'all',doneBy:[]},
+  {id:'ck4',title:'Karty EKUZ z NFZ',category:'📄 Dokumenty i finanse',assignee:'all',doneBy:[]},
+  {id:'ck5',title:'Prywatne ubezpieczenie turystyczne — grupowe lub osobne',category:'📄 Dokumenty i finanse',assignee:'all',doneBy:[]},
+  {id:'ck6',title:'Gotówka EUR na winiety, parkingi i drobne wydatki',category:'📄 Dokumenty i finanse',assignee:'all',doneBy:[]},
+  {id:'ck7',title:'Karty płatnicze i dodatkowa gotówka EUR na Chorwację',category:'📄 Dokumenty i finanse',assignee:'all',doneBy:[]},
+  {id:'ck8',title:'Karta Revolut lub Wise — korzystne przewalutowanie',category:'📄 Dokumenty i finanse',assignee:'all',doneBy:[]},
+  {id:'ck9',title:'Zdjęcia lub screeny rezerwacji domku i busa zapisane offline',category:'📄 Dokumenty i finanse',assignee:'all',doneBy:[]},
+  {id:'ck10',title:'Winiety Czechy, Austria, Słowenia i Węgry kupione online przed wyjazdem',category:'📄 Dokumenty i finanse',assignee:'all',doneBy:[]},
+  {id:'ck11',title:'Minimum 3 duże powerbanki 20 000+ mAh i ładowarki',category:'🔋 Elektronika i komunikacja',assignee:'all',doneBy:[]},
+  {id:'ck12',title:'Stacja zasilania — budżet około 300 zł',category:'🔋 Elektronika i komunikacja',assignee:'all',doneBy:[]},
+  {id:'ck13',title:'Zapasowe kable USB-C i Lightning — po 2 sztuki',category:'🔋 Elektronika i komunikacja',assignee:'all',doneBy:[]},
+  {id:'ck14',title:'Ładowarka samochodowa USB multiport do gniazda 12 V',category:'🔋 Elektronika i komunikacja',assignee:'all',doneBy:[]},
+  {id:'ck15',title:'Google Maps offline — cała trasa PL → CZ → AT → SLO → HR → HU → PL',category:'🔋 Elektronika i komunikacja',assignee:'all',doneBy:[]},
+  {id:'ck16',title:'Maps.me offline jako zapasowa nawigacja',category:'🔋 Elektronika i komunikacja',assignee:'all',doneBy:[]},
+  {id:'ck17',title:'Playlisty i filmy offline — Spotify, Netflix lub HBO Max',category:'🔋 Elektronika i komunikacja',assignee:'all',doneBy:[]},
+  {id:'ck18',title:'Głośnik Bluetooth na plażę i wieczory przy busie',category:'🔋 Elektronika i komunikacja',assignee:'all',doneBy:[]},
+  {id:'ck19',title:'Latarki lub czołówki',category:'🔋 Elektronika i komunikacja',assignee:'all',doneBy:[]},
+  {id:'ck20',title:'Aparat lub kamera — opcjonalnie',category:'🔋 Elektronika i komunikacja',assignee:'all',doneBy:[]},
+  {id:'ck21',title:'Małe składane poduszki podróżne — każdy swoją',category:'🛏️ Sen i wygoda',assignee:'all',doneBy:[]},
+  {id:'ck22',title:'Opaski na oczy do spania',category:'🛏️ Sen i wygoda',assignee:'all',doneBy:[]},
+  {id:'ck23',title:'Buty do wody — ochrona przed jeżowcami i kamieniami',category:'👕 Plaża',assignee:'all',doneBy:[]}],
  plan:[
   {id:'p1',day:1,date:'2027-08-15',title:'Start z Gdańska',description:'Odbiór busa, pakowanie i nocny przejazd przez Polskę w kierunku Czech.'},
   {id:'p2',day:2,date:'2027-08-16',title:'Praga i dalsza droga',description:'Poranny przystanek w Pradze, spacer i posiłek. Przejazd przez Austrię i nocleg w busie lub na campingu.'},
@@ -54,12 +71,12 @@ const initialData={
 };
 let data=loadData();let currentUser=null;let confirmAction=null;let adminMode=sessionStorage.getItem(SESSION_KEY)==='admin';let remoteSyncReady=false;let remoteSaveTimer=null;let remoteChannel=null;
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-function normalizeData(source){const result=source&&typeof source==='object'?deepCopy(source):deepCopy(initialData);result.trip={...deepCopy(initialData.trip),...(result.trip||{})};result.users=(result.users||deepCopy(initialData.users)).map(user=>({...user,name:PARTICIPANT_NAMES[user.id]||user.name}));result.payments=result.payments||deepCopy(initialData.payments);result.tasks=result.tasks||deepCopy(initialData.tasks);result.plan=result.plan||deepCopy(initialData.plan);result.fuel=result.fuel||deepCopy(initialData.fuel);result.route=(result.route||deepCopy(initialData.route)).map(stop=>({...stop,...(initialData.route.find(x=>x.city===stop.city)||{}),note:stop.note,km:stop.km}));result.expenses=(result.expenses||[]).map(e=>({...e,participants:e.participants?.length?e.participants:result.users.map(u=>u.id)}));return result}
+function normalizeData(source){const result=source&&typeof source==='object'?deepCopy(source):deepCopy(initialData);result.trip={...deepCopy(initialData.trip),...(result.trip||{})};result.users=(result.users||deepCopy(initialData.users)).map(user=>({...user,name:PARTICIPANT_NAMES[user.id]||user.name}));result.payments=result.payments||deepCopy(initialData.payments);if(result.checklistVersion!==CHECKLIST_VERSION){result.tasks=deepCopy(initialData.tasks);result.checklistVersion=CHECKLIST_VERSION}else result.tasks=result.tasks||deepCopy(initialData.tasks);result.plan=result.plan||deepCopy(initialData.plan);result.fuel=result.fuel||deepCopy(initialData.fuel);result.route=(result.route||deepCopy(initialData.route)).map(stop=>({...stop,...(initialData.route.find(x=>x.city===stop.city)||{}),note:stop.note,km:stop.km}));result.expenses=(result.expenses||[]).map(e=>({...e,participants:e.participants?.length?e.participants:result.users.map(u=>u.id)}));return result}
 function loadData(){let stored;try{stored=JSON.parse(localStorage.getItem(STORAGE_KEY))}catch{}return normalizeData(stored||initialData)}
 function saveLocalData(){localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}
 function saveData(){saveLocalData();if(!remoteSyncReady||!window.tripSupabase)return;clearTimeout(remoteSaveTimer);remoteSaveTimer=setTimeout(pushRemoteData,180)}
 async function pushRemoteData(){if(!window.tripSupabase)return;const {error}=await window.tripSupabase.from('trip_state').update({data:deepCopy(data),updated_at:new Date().toISOString()}).eq('id',REMOTE_TRIP_ID);if(error){console.error('Błąd synchronizacji danych:',error);toast('Nie udało się zsynchronizować danych')}}
-async function initTripSync(){if(!window.tripSupabase||remoteSyncReady)return;const {data:row,error}=await window.tripSupabase.from('trip_state').select('data').eq('id',REMOTE_TRIP_ID).single();if(error){console.error('Nie udało się pobrać wspólnych danych:',error);toast('Brak połączenia ze wspólnymi danymi');return}remoteSyncReady=true;if(row?.data?.trip){data=normalizeData(row.data);saveLocalData();const remembered=localStorage.getItem(SELECTED_USER_KEY);currentUser=data.users.find(u=>u.id===remembered)||data.users.find(u=>u.role==='user')||data.users[0];renderAll()}else{await pushRemoteData()}remoteChannel=window.tripSupabase.channel('trip-state-sync').on('postgres_changes',{event:'UPDATE',schema:'public',table:'trip_state',filter:`id=eq.${REMOTE_TRIP_ID}`},payload=>{if(!payload.new?.data)return;data=normalizeData(payload.new.data);saveLocalData();const selected=currentUser?.id||localStorage.getItem(SELECTED_USER_KEY);currentUser=data.users.find(u=>u.id===selected)||data.users.find(u=>u.role==='user')||data.users[0];renderAll()}).subscribe();document.body.dataset.sync='online'}
+async function initTripSync(){if(!window.tripSupabase||remoteSyncReady)return;const {data:row,error}=await window.tripSupabase.from('trip_state').select('data').eq('id',REMOTE_TRIP_ID).single();if(error){console.error('Nie udało się pobrać wspólnych danych:',error);toast('Brak połączenia ze wspólnymi danymi');return}remoteSyncReady=true;if(row?.data?.trip){const checklistMigrated=row.data.checklistVersion!==CHECKLIST_VERSION;data=normalizeData(row.data);saveLocalData();const remembered=localStorage.getItem(SELECTED_USER_KEY);currentUser=data.users.find(u=>u.id===remembered)||data.users.find(u=>u.role==='user')||data.users[0];renderAll();if(checklistMigrated)await pushRemoteData()}else{await pushRemoteData()}remoteChannel=window.tripSupabase.channel('trip-state-sync').on('postgres_changes',{event:'UPDATE',schema:'public',table:'trip_state',filter:`id=eq.${REMOTE_TRIP_ID}`},payload=>{if(!payload.new?.data)return;const checklistMigrated=payload.new.data.checklistVersion!==CHECKLIST_VERSION;data=normalizeData(payload.new.data);saveLocalData();const selected=currentUser?.id||localStorage.getItem(SELECTED_USER_KEY);currentUser=data.users.find(u=>u.id===selected)||data.users.find(u=>u.role==='user')||data.users[0];renderAll();if(checklistMigrated)pushRemoteData()}).subscribe();document.body.dataset.sync='online'}
 window.initTripSync=initTripSync;
 function money(n){return new Intl.NumberFormat('pl-PL',{style:'currency',currency:'PLN',maximumFractionDigits:0}).format(Number(n)||0)}
 function fmtDate(s){return new Intl.DateTimeFormat('pl-PL',{day:'numeric',month:'short'}).format(new Date(s+'T12:00:00'))}
