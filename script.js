@@ -1,6 +1,7 @@
 const STORAGE_KEY='chorwacja2027_demo_v1';
 const SESSION_KEY='chorwacja2027_session';
 const SELECTED_USER_KEY='chorwacja2027_selected_user';
+const REMOTE_TRIP_ID='00000000-0000-0000-0000-000000002027';
 const deepCopy=o=>JSON.parse(JSON.stringify(o));
 const id=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const PARTICIPANT_NAMES={admin:'Bartosz',u1:'Dominika',u2:'Agnieszka',u3:'Michał',u4:'Karolina',u5:'Damian',u6:'Krzyś'};
@@ -51,10 +52,15 @@ const initialData={
   {city:'Zagrzeb',country:'Chorwacja',note:'Tankowanie i ostatnia zmiana',km:1480,lat:45.8150,lng:15.9819},
   {city:'Makarska',country:'Chorwacja',note:'Cel podróży',km:1800,lat:43.2969,lng:17.0170}]
 };
-let data=loadData();let currentUser=null;let confirmAction=null;let adminMode=sessionStorage.getItem(SESSION_KEY)==='admin';
+let data=loadData();let currentUser=null;let confirmAction=null;let adminMode=sessionStorage.getItem(SESSION_KEY)==='admin';let remoteSyncReady=false;let remoteSaveTimer=null;let remoteChannel=null;
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-function loadData(){let stored;try{stored=JSON.parse(localStorage.getItem(STORAGE_KEY))}catch{}const result=stored||deepCopy(initialData);result.users=(result.users||deepCopy(initialData.users)).map(user=>({...user,name:PARTICIPANT_NAMES[user.id]||user.name}));result.fuel=result.fuel||deepCopy(initialData.fuel);result.route=(result.route||deepCopy(initialData.route)).map(stop=>({...stop,...(initialData.route.find(x=>x.city===stop.city)||{}),note:stop.note,km:stop.km}));result.expenses=(result.expenses||[]).map(e=>({...e,participants:e.participants?.length?e.participants:result.users.map(u=>u.id)}));return result}
-function saveData(){localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}
+function normalizeData(source){const result=source&&typeof source==='object'?deepCopy(source):deepCopy(initialData);result.trip={...deepCopy(initialData.trip),...(result.trip||{})};result.users=(result.users||deepCopy(initialData.users)).map(user=>({...user,name:PARTICIPANT_NAMES[user.id]||user.name}));result.payments=result.payments||deepCopy(initialData.payments);result.tasks=result.tasks||deepCopy(initialData.tasks);result.plan=result.plan||deepCopy(initialData.plan);result.fuel=result.fuel||deepCopy(initialData.fuel);result.route=(result.route||deepCopy(initialData.route)).map(stop=>({...stop,...(initialData.route.find(x=>x.city===stop.city)||{}),note:stop.note,km:stop.km}));result.expenses=(result.expenses||[]).map(e=>({...e,participants:e.participants?.length?e.participants:result.users.map(u=>u.id)}));return result}
+function loadData(){let stored;try{stored=JSON.parse(localStorage.getItem(STORAGE_KEY))}catch{}return normalizeData(stored||initialData)}
+function saveLocalData(){localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}
+function saveData(){saveLocalData();if(!remoteSyncReady||!window.tripSupabase)return;clearTimeout(remoteSaveTimer);remoteSaveTimer=setTimeout(pushRemoteData,180)}
+async function pushRemoteData(){if(!window.tripSupabase)return;const {error}=await window.tripSupabase.from('trip_state').update({data:deepCopy(data),updated_at:new Date().toISOString()}).eq('id',REMOTE_TRIP_ID);if(error){console.error('Błąd synchronizacji danych:',error);toast('Nie udało się zsynchronizować danych')}}
+async function initTripSync(){if(!window.tripSupabase||remoteSyncReady)return;const {data:row,error}=await window.tripSupabase.from('trip_state').select('data').eq('id',REMOTE_TRIP_ID).single();if(error){console.error('Nie udało się pobrać wspólnych danych:',error);toast('Brak połączenia ze wspólnymi danymi');return}remoteSyncReady=true;if(row?.data?.trip){data=normalizeData(row.data);saveLocalData();const remembered=localStorage.getItem(SELECTED_USER_KEY);currentUser=data.users.find(u=>u.id===remembered)||data.users.find(u=>u.role==='user')||data.users[0];renderAll()}else{await pushRemoteData()}remoteChannel=window.tripSupabase.channel('trip-state-sync').on('postgres_changes',{event:'UPDATE',schema:'public',table:'trip_state',filter:`id=eq.${REMOTE_TRIP_ID}`},payload=>{if(!payload.new?.data)return;data=normalizeData(payload.new.data);saveLocalData();const selected=currentUser?.id||localStorage.getItem(SELECTED_USER_KEY);currentUser=data.users.find(u=>u.id===selected)||data.users.find(u=>u.role==='user')||data.users[0];renderAll()}).subscribe();document.body.dataset.sync='online'}
+window.initTripSync=initTripSync;
 function money(n){return new Intl.NumberFormat('pl-PL',{style:'currency',currency:'PLN',maximumFractionDigits:0}).format(Number(n)||0)}
 function fmtDate(s){return new Intl.DateTimeFormat('pl-PL',{day:'numeric',month:'short'}).format(new Date(s+'T12:00:00'))}
 function initials(n){return n.split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase()}

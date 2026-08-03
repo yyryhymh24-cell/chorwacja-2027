@@ -8,6 +8,7 @@
   const client = window.supabase.createClient(PROJECT_URL, PUBLISHABLE_KEY, {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
   });
+  window.tripSupabase = client;
 
   const gate = document.getElementById('authGate');
   const app = document.getElementById('appView');
@@ -136,6 +137,7 @@
   });
 
   showApp();
+  window.initTripSync?.();
   client.auth.getSession().then(async ({ data }) => {
     if (recoveryMode) {
       showRecovery();
