@@ -3,13 +3,14 @@ const SESSION_KEY='chorwacja2027_session';
 const SELECTED_USER_KEY='chorwacja2027_selected_user';
 const deepCopy=o=>JSON.parse(JSON.stringify(o));
 const id=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const PARTICIPANT_NAMES={admin:'Bartosz',u1:'Dominika',u2:'Agnieszka',u3:'Michał',u4:'Karolina',u5:'Damian',u6:'Krzyś'};
 const initialData={
  trip:{name:'Chorwacja 2027',destination:'Makarska, Chorwacja',start:'2027-08-15',end:'2027-08-24',people:7,budget:24800,description:'10-dniowy wyjazd busem z Gdańska do Makarskiej.'},
  users:[
-  {id:'admin',name:'Oliwier',role:'admin',pin:'2027'},
-  {id:'u1',name:'Kacper',role:'user',pin:'1234'},{id:'u2',name:'Maja',role:'user',pin:'1234'},
-  {id:'u3',name:'Julia',role:'user',pin:'1234'},{id:'u4',name:'Bartek',role:'user',pin:'1234'},
-  {id:'u5',name:'Zosia',role:'user',pin:'1234'},{id:'u6',name:'Michał',role:'user',pin:'1234'}],
+  {id:'admin',name:'Bartosz',role:'admin',pin:'2027'},
+  {id:'u1',name:'Dominika',role:'user',pin:'1234'},{id:'u2',name:'Agnieszka',role:'user',pin:'1234'},
+  {id:'u3',name:'Michał',role:'user',pin:'1234'},{id:'u4',name:'Karolina',role:'user',pin:'1234'},
+  {id:'u5',name:'Damian',role:'user',pin:'1234'},{id:'u6',name:'Krzyś',role:'user',pin:'1234'}],
  payments:{admin:3543,u1:2500,u2:3543,u3:1800,u4:3000,u5:3543,u6:2200},
  expenses:[
   {id:'e1',name:'Wynajem busa 9-osobowego',category:'Transport',amount:2500,status:'planned',date:'2027-08-15',owner:'admin',note:'10 dni, odbiór w Gdańsku'},
@@ -52,7 +53,7 @@ const initialData={
 };
 let data=loadData();let currentUser=null;let confirmAction=null;let adminMode=sessionStorage.getItem(SESSION_KEY)==='admin';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-function loadData(){let stored;try{stored=JSON.parse(localStorage.getItem(STORAGE_KEY))}catch{}const result=stored||deepCopy(initialData);result.fuel=result.fuel||deepCopy(initialData.fuel);result.route=(result.route||deepCopy(initialData.route)).map(stop=>({...stop,...(initialData.route.find(x=>x.city===stop.city)||{}),note:stop.note,km:stop.km}));result.expenses=(result.expenses||[]).map(e=>({...e,participants:e.participants?.length?e.participants:result.users.map(u=>u.id)}));return result}
+function loadData(){let stored;try{stored=JSON.parse(localStorage.getItem(STORAGE_KEY))}catch{}const result=stored||deepCopy(initialData);result.users=(result.users||deepCopy(initialData.users)).map(user=>({...user,name:PARTICIPANT_NAMES[user.id]||user.name}));result.fuel=result.fuel||deepCopy(initialData.fuel);result.route=(result.route||deepCopy(initialData.route)).map(stop=>({...stop,...(initialData.route.find(x=>x.city===stop.city)||{}),note:stop.note,km:stop.km}));result.expenses=(result.expenses||[]).map(e=>({...e,participants:e.participants?.length?e.participants:result.users.map(u=>u.id)}));return result}
 function saveData(){localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}
 function money(n){return new Intl.NumberFormat('pl-PL',{style:'currency',currency:'PLN',maximumFractionDigits:0}).format(Number(n)||0)}
 function fmtDate(s){return new Intl.DateTimeFormat('pl-PL',{day:'numeric',month:'short'}).format(new Date(s+'T12:00:00'))}
