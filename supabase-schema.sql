@@ -1,0 +1,5 @@
+-- Supabase schema for Chorwacja 2027
+-- Applied to project zegaqlqnvtqzynyoswik on 2026-08-03.
+-- The live schema includes RLS policies, private membership helpers,
+-- an automatic profile trigger, and the initial trip, plan, checklist and route data.
+-- Keep this file as the reference migration for future project setup.
