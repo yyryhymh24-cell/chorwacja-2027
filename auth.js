@@ -3,154 +3,133 @@
 
   const PROJECT_URL = 'https://zegaqlqnvtqzynyoswik.supabase.co';
   const PUBLISHABLE_KEY = 'sb_publishable_e1UcKjRsRORGPF1X4tNprw_dwbbDro7';
-  const TRIP_ID = '00000000-0000-0000-0000-000000002027';
-  let recoveryMode = location.hash.includes('type=recovery') || new URLSearchParams(location.search).get('type') === 'recovery';
+
   const client = window.supabase.createClient(PROJECT_URL, PUBLISHABLE_KEY, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
   });
+
   window.tripSupabase = client;
 
   const gate = document.getElementById('authGate');
   const app = document.getElementById('appView');
-  const loginDialog = document.getElementById('adminLoginDialog');
-  const loginForm = document.getElementById('adminLoginForm');
-  const passwordForm = document.getElementById('newPasswordForm');
-  const loginMessage = document.getElementById('adminLoginError');
-  const passwordMessage = document.getElementById('passwordMessage');
+  const loading = document.getElementById('authLoading');
+  const loginForm = document.getElementById('magicLoginForm');
+  const loginMessage = document.getElementById('loginMessage');
+  const sendButton = document.getElementById('sendMagicLinkBtn');
+  const denied = document.getElementById('accessDenied');
+  const deniedMessage = document.getElementById('accessDeniedMessage');
+  let bootingFor = null;
+
+  function showOnly(element) {
+    [loading, loginForm, denied].forEach(item => item.classList.toggle('hidden', item !== element));
+    gate.classList.remove('hidden');
+    app.classList.add('auth-hidden');
+  }
 
   function showApp() {
     gate.classList.add('hidden');
     app.classList.remove('auth-hidden');
   }
 
-  function showRecovery() {
-    gate.classList.remove('hidden');
-    app.classList.add('auth-hidden');
-  }
-
-  function setGuestMode() {
-    adminMode = false;
-    sessionStorage.removeItem(SESSION_KEY);
-    renderAll();
-    showApp();
-  }
-
   function polishError(error) {
-    const text = String(error?.message || error || 'Nie udało się wykonać operacji.');
-    if (/invalid login credentials/i.test(text)) return 'Nieprawidłowy e-mail lub hasło.';
-    if (/rate limit/i.test(text)) return 'Limit wiadomości Supabase został wykorzystany. Spróbuj ponownie za około godzinę.';
-    if (/expired|invalid.*token|otp/i.test(text)) return 'Link wygasł albo został już użyty. Wyślij nowy link do hasła.';
-    if (/password.*short|least/i.test(text)) return 'Hasło musi mieć co najmniej 8 znaków.';
-    return text;
+    const message = String(error?.message || error || 'Nie udało się wykonać operacji.');
+    if (/rate limit|email rate/i.test(message)) {
+      return 'Limit wiadomości został chwilowo wykorzystany. Odczekaj kilka minut i spróbuj ponownie.';
+    }
+    if (/user not found|invalid login|signup.*disabled/i.test(message)) {
+      return 'Ten adres nie ma konta uczestnika. Poproś administratora o zaproszenie.';
+    }
+    if (/network|fetch/i.test(message)) {
+      return 'Brak połączenia z Supabase. Sprawdź internet i spróbuj ponownie.';
+    }
+    return message;
   }
 
-  async function applyRole(user) {
+  async function openForSession(session) {
+    if (!session?.user) {
+      bootingFor = null;
+      showOnly(loginForm);
+      return;
+    }
+    if (bootingFor === session.user.id) return;
+    bootingFor = session.user.id;
+    showOnly(loading);
     try {
-      const { data, error } = await client.from('trip_members').select('role').eq('trip_id', TRIP_ID).eq('user_id', user.id).maybeSingle();
-      const allowed = !error && data?.role === 'admin';
-      adminMode = allowed;
-      if (allowed) sessionStorage.setItem(SESSION_KEY, 'admin');
-      else sessionStorage.removeItem(SESSION_KEY);
-      renderAll();
-      return allowed;
+      await window.startTripApp(session.user);
+      showApp();
     } catch (error) {
-      console.warn('Nie udało się odczytać roli administratora.', error);
-      setGuestMode();
-      return false;
+      console.error('Nie udało się otworzyć panelu.', error);
+      if (error?.code === 'NOT_MEMBER') {
+        deniedMessage.textContent = 'Konto jest poprawne, ale nie zostało jeszcze przypisane do wyjazdu. Administrator musi połączyć je z uczestnikiem.';
+        showOnly(denied);
+      } else {
+        loginMessage.classList.remove('success');
+        loginMessage.textContent = polishError(error);
+        showOnly(loginForm);
+      }
+      bootingFor = null;
     }
   }
 
-  document.getElementById('adminLoginBtn').addEventListener('click', () => {
-    loginMessage.textContent = '';
-    loginDialog.showModal();
-  });
-
-  loginForm.addEventListener('submit', async (event) => {
+  loginForm.addEventListener('submit', async event => {
     event.preventDefault();
-    loginMessage.textContent = 'Logowanie…';
-    const email = document.getElementById('adminEmail').value.trim();
-    const password = document.getElementById('adminPassword').value;
-    const { data, error } = await client.auth.signInWithPassword({ email, password });
+    const email = document.getElementById('loginEmail').value.trim();
+    loginMessage.classList.remove('success');
+    loginMessage.textContent = 'Wysyłanie bezpiecznego linku…';
+    sendButton.disabled = true;
+
+    const redirectUrl = location.protocol === 'file:'
+      ? 'https://chorwacja-2027.vercel.app/'
+      : `${location.origin}${location.pathname}`;
+    const { error } = await client.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: redirectUrl
+      }
+    });
+
+    sendButton.disabled = false;
     if (error) {
       loginMessage.textContent = polishError(error);
       return;
     }
-    const allowed = await applyRole(data.user);
-    if (!allowed) {
-      await client.auth.signOut();
-      loginMessage.textContent = 'To konto nie ma uprawnień administratora.';
-      return;
-    }
-    loginMessage.textContent = '';
-    document.getElementById('adminPassword').value = '';
-    loginDialog.close();
-    navigate('dashboard');
-    toast('Zalogowano jako administrator');
+
+    loginMessage.classList.add('success');
+    loginMessage.textContent = 'Link wysłany. Otwórz wiadomość na tym urządzeniu; sesja zostanie zapamiętana.';
   });
 
-  document.getElementById('adminForgotPassword').addEventListener('click', async () => {
-    const email = document.getElementById('adminEmail').value.trim();
-    if (!email) {
-      loginMessage.textContent = 'Najpierw wpisz adres e-mail administratora.';
-      return;
-    }
-    loginMessage.textContent = 'Wysyłanie wiadomości…';
-    const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: `${location.origin}/` });
-    loginMessage.textContent = error ? polishError(error) : 'Wysłaliśmy link do ustawienia nowego hasła.';
-  });
+  async function signOut() {
+    await window.stopTripApp?.();
+    await client.auth.signOut();
+    bootingFor = null;
+    showOnly(loginForm);
+  }
 
-  passwordForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const password = document.getElementById('newPassword').value;
-    const repeat = document.getElementById('newPasswordRepeat').value;
-    if (password.length < 8) {
-      passwordMessage.textContent = 'Hasło musi mieć co najmniej 8 znaków.';
-      return;
-    }
-    if (password !== repeat) {
-      passwordMessage.textContent = 'Podane hasła nie są takie same.';
-      return;
-    }
-    passwordMessage.textContent = 'Zapisywanie hasła…';
-    const { data, error } = await client.auth.updateUser({ password });
-    if (error) {
-      passwordMessage.textContent = polishError(error);
-      return;
-    }
-    recoveryMode = false;
-    history.replaceState({}, document.title, location.pathname);
-    passwordMessage.textContent = 'Hasło zapisane. Otwieranie panelu…';
-    await applyRole(data.user);
-    setTimeout(showApp, 500);
-  });
+  document.getElementById('accessSignOut').addEventListener('click', signOut);
+  document.getElementById('logoutBtn').addEventListener('click', signOut);
 
   client.auth.onAuthStateChange((event, session) => {
-    if (event === 'PASSWORD_RECOVERY') {
-      recoveryMode = true;
-      showRecovery();
+    if (event === 'SIGNED_OUT') {
+      bootingFor = null;
+      showOnly(loginForm);
       return;
     }
-    if (event === 'SIGNED_OUT') setGuestMode();
-    if (event === 'SIGNED_IN' && session?.user && !recoveryMode) {
-      setTimeout(() => applyRole(session.user), 0);
+    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+      setTimeout(() => openForSession(session), 0);
     }
   });
 
-  showApp();
-  window.initTripSync?.();
-  client.auth.getSession().then(async ({ data }) => {
-    if (recoveryMode) {
-      showRecovery();
+  client.auth.getSession().then(({ data, error }) => {
+    if (error) {
+      loginMessage.textContent = polishError(error);
+      showOnly(loginForm);
       return;
     }
-    if (data.session?.user) await applyRole(data.session.user);
-    else setGuestMode();
+    openForSession(data.session);
   });
-
-  document.getElementById('logoutBtn').onclick = async () => {
-    await client.auth.signOut();
-    setGuestMode();
-    navigate('dashboard');
-    toast('Wylogowano administratora');
-  };
 })();

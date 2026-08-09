@@ -1,0 +1,74 @@
+.auth-loading {
+  display: grid;
+  gap: 8px;
+  padding: 24px 0;
+  color: var(--ink);
+  text-align: center;
+}
+
+.auth-loading strong { font: 800 18px Manrope; }
+.auth-loading span { color: var(--muted); font-size: 12px; }
+.auth-message.success { color: var(--teal); }
+
+.sync-panel {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #f7faf8;
+}
+
+.sync-panel > span:nth-child(2) { display: grid; gap: 2px; }
+.sync-panel strong { font: 800 11px Manrope; }
+.sync-panel small { font-size: 9px; color: var(--muted); }
+
+.sync-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #d29a31;
+  box-shadow: 0 0 0 4px rgba(210, 154, 49, .12);
+}
+
+.sync-panel[data-state="online"] .sync-dot {
+  background: var(--teal);
+  box-shadow: 0 0 0 4px rgba(20, 124, 111, .12);
+}
+
+.sync-panel[data-state="saving"] .sync-dot,
+.sync-panel[data-state="loading"] .sync-dot { animation: syncPulse 1s ease-in-out infinite; }
+
+.sync-panel[data-state="error"] {
+  border-color: #ecc4bb;
+  background: #fff7f5;
+}
+
+.sync-panel[data-state="error"] .sync-dot {
+  background: #c75b46;
+  box-shadow: 0 0 0 4px rgba(199, 91, 70, .12);
+}
+
+.sync-retry {
+  border: 0;
+  background: none;
+  color: var(--teal);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.account-summary { display: grid; gap: 3px; padding: 8px; }
+.account-summary strong { font: 800 12px Manrope; }
+.account-summary small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+}
+
+@keyframes syncPulse {
+  50% { opacity: .35; transform: scale(.8); }
+}
