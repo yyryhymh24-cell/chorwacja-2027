@@ -14,7 +14,8 @@ const emptyData = () => ({
   paymentSchedule: [],
   driverShifts: [],
   documents: [],
-  emergencyContacts: []
+  emergencyContacts: [],
+  attractions: []
 });
 
 let data = emptyData();
@@ -47,6 +48,15 @@ function escapeHtml(value = '') {
   return String(value).replace(/[&<>'"]/g, char => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
   })[char]);
+}
+
+function safeHttpUrl(value = '') {
+  try {
+    const url = new URL(value);
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+  } catch {
+    return '';
+  }
 }
 
 function localDateTime(value) {
@@ -149,7 +159,7 @@ async function loadNormalizedData({ quiet = false } = {}) {
     tripResult, membersResult, expensesResult, expenseParticipantsResult,
     paymentsResult, tasksResult, assigneesResult, completionsResult,
     planResult, shiftsResult, documentsResult, contactsResult,
-    scheduleResult, routeResult, fuelResult
+    scheduleResult, routeResult, fuelResult, attractionsResult, attractionLikesResult
   ] = await Promise.all([
     client.from('trips').select('*').eq('id', TRIP_ID).single(),
     client.from('trip_members').select('*').eq('trip_id', TRIP_ID).order('sort_order'),
@@ -165,7 +175,9 @@ async function loadNormalizedData({ quiet = false } = {}) {
     client.from('emergency_contacts').select('*').eq('trip_id', TRIP_ID).order('created_at'),
     client.from('payment_schedule').select('*').eq('trip_id', TRIP_ID).order('due_date'),
     client.from('route_stops').select('*').eq('trip_id', TRIP_ID).order('position'),
-    client.from('fuel_settings').select('*').eq('trip_id', TRIP_ID).maybeSingle()
+    client.from('fuel_settings').select('*').eq('trip_id', TRIP_ID).maybeSingle(),
+    client.from('attractions').select('*').eq('trip_id', TRIP_ID),
+    client.from('attraction_likes').select('*').eq('trip_id', TRIP_ID)
   ]);
 
   const trip = assertResult(tripResult);
@@ -183,6 +195,8 @@ async function loadNormalizedData({ quiet = false } = {}) {
   const schedule = assertResult(scheduleResult);
   const route = assertResult(routeResult);
   const fuel = assertResult(fuelResult);
+  const attractions = assertResult(attractionsResult);
+  const attractionLikes = assertResult(attractionLikesResult);
 
   const mappedUsers = members.map(member => ({
     id: member.id,
@@ -292,6 +306,21 @@ async function loadNormalizedData({ quiet = false } = {}) {
       phone: item.phone || '',
       category: item.category,
       note: item.note || ''
+    })),
+    attractions: attractions.map(item => ({
+      id: item.id,
+      name: item.name,
+      description: item.description || '',
+      location: item.location,
+      url: item.url || '',
+      date: item.planned_date || '',
+      price: Number(item.price),
+      owner: item.created_by_member_id,
+      expenseId: item.expense_id,
+      createdAt: item.created_at,
+      likes: attractionLikes
+        .filter(like => like.attraction_id === item.id)
+        .map(like => like.member_id)
     }))
   };
 
@@ -304,7 +333,8 @@ function subscribeToRealtime() {
   const tables = [
     'trips', 'trip_members', 'expenses', 'expense_participants', 'payments',
     'tasks', 'task_assignees', 'task_completions', 'trip_plan', 'driver_shifts',
-    'documents', 'emergency_contacts', 'payment_schedule', 'route_stops', 'fuel_settings'
+    'documents', 'emergency_contacts', 'payment_schedule', 'route_stops', 'fuel_settings',
+    'attractions', 'attraction_likes'
   ];
   let channel = window.tripSupabase.channel(`trip-${TRIP_ID}`);
   tables.forEach(table => {
@@ -390,6 +420,7 @@ function renderAll() {
   renderExpenses();
   renderPayments();
   renderChecklist();
+  renderAttractions();
   renderDrivers();
   renderResources();
   renderPlan();
@@ -449,6 +480,36 @@ function renderExpenses() {
     const share = Number(expense.amount) / count;
     const deposit = Number(expense.depositAmount) || 0;
     return `<tr><td><strong>${escapeHtml(expense.name)}</strong><br><small class="muted">${fmtDate(expense.date)}</small></td><td><span class="category">${escapeHtml(expense.category)}</span></td><td><strong>${money(expense.amount)}</strong>${expense.hasDeposit && deposit > 0 ? `<span class="expense-deposit">Kaucja · ${money(deposit)}</span>` : ''}<span class="expense-split">${count} ${count === 1 ? 'osoba' : count < 5 ? 'osoby' : 'osób'} · ${money(share)} / os.</span></td><td><span class="status ${expense.status}">${expense.status === 'paid' ? 'Zapłacone' : 'Planowane'}</span></td><td>${escapeHtml(userName(expense.owner))}</td><td><div class="row-actions">${canEdit ? `<button data-edit-expense="${expense.id}" title="Edytuj">✎</button>` : ''}${isAdmin() ? `<button data-delete-expense="${expense.id}" title="Usuń">×</button>` : ''}</div></td></tr>`;
+  }).join('');
+}
+
+function renderAttractions() {
+  const sort = $('#attractionSort')?.value || 'likes';
+  const participants = Math.max(1, data.users.length);
+  const items = [...data.attractions].sort((a, b) => {
+    if (sort === 'newest') return b.createdAt.localeCompare(a.createdAt);
+    if (sort === 'cheapest') return a.price - b.price || b.likes.length - a.likes.length;
+    if (sort === 'expensive') return b.price - a.price || b.likes.length - a.likes.length;
+    return b.likes.length - a.likes.length || b.createdAt.localeCompare(a.createdAt);
+  });
+
+  $('#attractionsEmpty').classList.toggle('hidden', items.length > 0);
+  $('#attractionsGrid').innerHTML = items.map(item => {
+    const own = item.owner === currentUser.id;
+    const canManage = isAdmin() || own;
+    const liked = item.likes.includes(currentUser.id);
+    const likerNames = item.likes.map(userName).join(', ');
+    const link = safeHttpUrl(item.url);
+    return `<article class="card attraction-card">
+      ${canManage ? `<div class="card-tools"><button data-edit-attraction="${item.id}" title="Edytuj">✎</button><button data-delete-attraction="${item.id}" title="Usuń">×</button></div>` : ''}
+      <div class="attraction-meta"><span class="attraction-chip">Dodał(a): ${escapeHtml(userName(item.owner))}</span>${item.date ? `<span class="attraction-chip">${fmtDate(item.date)}</span>` : ''}</div>
+      <h2>${escapeHtml(item.name)}</h2>
+      <div class="attraction-location">⌖ ${escapeHtml(item.location)}</div>
+      <p class="attraction-description">${escapeHtml(item.description || 'Brak dodatkowego opisu.')}</p>
+      ${link ? `<a class="attraction-link" href="${escapeHtml(link)}" target="_blank" rel="noopener">Otwórz link ↗</a>` : ''}
+      <div class="attraction-price">${money(item.price)} razem <span>· ${money(item.price / participants)}/os.</span></div>
+      <div class="attraction-footer"><button class="attraction-like ${liked ? 'active' : ''}" data-toggle-attraction-like="${item.id}">${liked ? 'Cofnij like' : 'Dodaj like'}</button><p class="attraction-likers">❤️ ${item.likes.length}${likerNames ? ` — ${escapeHtml(likerNames)}` : ''}</p></div>
+    </article>`;
   }).join('');
 }
 
@@ -687,6 +748,26 @@ function navigate(name) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+function updateAttractionPricePreview() {
+  const price = Math.max(0, Number($('#attractionPrice').value) || 0);
+  const participants = Math.max(1, data.users.length);
+  $('#attractionPricePreview').textContent = `${money(price)} razem · ${money(price / participants)}/os. dla ${participants} osób`;
+}
+
+function openAttraction(item = null) {
+  $('#attractionForm').reset();
+  $('#attractionId').value = item?.id || '';
+  $('#attractionDialogTitle').textContent = item ? 'Edytuj atrakcję' : 'Dodaj atrakcję';
+  $('#attractionName').value = item?.name || '';
+  $('#attractionLocation').value = item?.location || '';
+  $('#attractionPrice').value = item?.price ?? '';
+  $('#attractionDate').value = item?.date || '';
+  $('#attractionUrl').value = item?.url || '';
+  $('#attractionDescription').value = item?.description || '';
+  updateAttractionPricePreview();
+  $('#attractionDialog').showModal();
+}
+
 function selectedExpenseParticipants() {
   return $$('#expenseParticipants input:checked').map(input => input.value);
 }
@@ -889,6 +970,44 @@ document.addEventListener('click', async event => {
     });
   }
 
+  const attractionLike = event.target.closest('[data-toggle-attraction-like]');
+  if (attractionLike) {
+    const attraction = data.attractions.find(item => item.id === attractionLike.dataset.toggleAttractionLike);
+    if (!attraction) return;
+    const liked = attraction.likes.includes(currentUser.id);
+    await runWrite(liked ? 'Cofnięto polubienie' : 'Atrakcja polubiona', async () => {
+      if (liked) {
+        assertResult(await window.tripSupabase.from('attraction_likes').delete()
+          .eq('attraction_id', attraction.id)
+          .eq('member_id', currentUser.id));
+      } else {
+        assertResult(await window.tripSupabase.from('attraction_likes').insert({
+          attraction_id: attraction.id,
+          trip_id: TRIP_ID,
+          member_id: currentUser.id
+        }));
+      }
+    });
+  }
+
+  const editAttraction = event.target.closest('[data-edit-attraction]');
+  if (editAttraction) {
+    const attraction = data.attractions.find(item => item.id === editAttraction.dataset.editAttraction);
+    if (attraction && (isAdmin() || attraction.owner === currentUser.id)) openAttraction(attraction);
+  }
+
+  const deleteAttraction = event.target.closest('[data-delete-attraction]');
+  if (deleteAttraction) {
+    const attraction = data.attractions.find(item => item.id === deleteAttraction.dataset.deleteAttraction);
+    if (attraction && (isAdmin() || attraction.owner === currentUser.id)) {
+      askConfirm('Usunąć atrakcję?', 'Atrakcja, polubienia i powiązany wydatek zostaną usunięte.', () => runWrite('Atrakcja i wydatek zostały usunięte', async () => {
+        assertResult(await window.tripSupabase.from('attractions').delete()
+          .eq('id', attraction.id)
+          .eq('trip_id', TRIP_ID));
+      }));
+    }
+  }
+
   const editExpense = event.target.closest('[data-edit-expense]');
   if (editExpense) {
     const expense = data.expenses.find(item => item.id === editExpense.dataset.editExpense);
@@ -964,6 +1083,38 @@ document.addEventListener('click', event => {
   if (deleteEmergency) askConfirm('Usunąć kontakt?', 'Kontakt zniknie dla całej grupy.', () => runWrite('Kontakt usunięty', async () => {
     assertResult(await window.tripSupabase.from('emergency_contacts').delete().eq('id', deleteEmergency.dataset.deleteEmergency).select('id').single());
   }));
+});
+
+$('#addAttractionBtn').onclick = () => openAttraction();
+$('#attractionSort').onchange = renderAttractions;
+$('#attractionPrice').oninput = updateAttractionPricePreview;
+
+$('#attractionForm').addEventListener('submit', async event => {
+  event.preventDefault();
+  const attractionId = $('#attractionId').value;
+  const previous = data.attractions.find(item => item.id === attractionId);
+  if (previous && !isAdmin() && previous.owner !== currentUser.id) return;
+
+  const payload = {
+    trip_id: TRIP_ID,
+    name: $('#attractionName').value.trim(),
+    description: $('#attractionDescription').value.trim(),
+    location: $('#attractionLocation').value.trim(),
+    url: $('#attractionUrl').value.trim() || null,
+    planned_date: $('#attractionDate').value || null,
+    price: Math.max(0, Number($('#attractionPrice').value) || 0)
+  };
+
+  const saved = await runWrite(attractionId ? 'Atrakcja i wydatek zostały zaktualizowane' : 'Atrakcja i wydatek zostały dodane', async () => {
+    const query = attractionId
+      ? window.tripSupabase.from('attractions').update(payload).eq('id', attractionId).select('id').single()
+      : window.tripSupabase.from('attractions').insert({
+        ...payload,
+        created_by_member_id: currentUser.id
+      }).select('id').single();
+    assertResult(await query);
+  });
+  if (saved) $('#attractionDialog').close();
 });
 
 $('#addExpenseBtn').onclick = () => openExpense();
