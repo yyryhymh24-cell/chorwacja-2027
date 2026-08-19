@@ -44,20 +44,16 @@
     <aside class="sidebar" id="sidebar">
       <div class="brand"><span class="brand-mark">C</span><span>Chorwacja<br><small>2027 · Makarska</small></span></div>
       <nav id="mainNav">
-        <p class="nav-label">Główne</p>
         <button data-view="dashboard" class="active"><span>⌂</span> Pulpit</button>
-        <button data-view="attractions"><span>♡</span> Atrakcje</button>
-        <p class="nav-label">Organizacja</p>
         <button data-view="expenses"><span>↗</span> Wydatki</button>
         <button data-view="payments"><span>◎</span> Wpłaty</button>
         <button data-view="checklist"><span>✓</span> Checklista</button>
+        <button data-view="attractions"><span>♡</span> Atrakcje</button>
         <button data-view="drivers"><span>◫</span> Grafik kierowców</button>
         <button data-view="plan"><span>▦</span> Plan podróży</button>
-        <p class="nav-label">W drodze</p>
         <button data-view="route"><span>⌖</span> Trasa i paliwo</button>
         <button data-view="resources"><span>✚</span> Dokumenty i SOS</button>
         <button data-view="links"><span>↗</span> Przydatne linki</button>
-        <p class="nav-label admin-only">Administracja</p>
         <button data-view="settings" class="admin-only"><span>⚙</span> Dane wyjazdu</button>
       </nav>
       <div class="sidebar-bottom">
@@ -128,9 +124,10 @@
         </section>
 
         <section id="view-resources" class="view">
-          <div class="page-heading"><div><p class="eyebrow teal">NAJWAŻNIEJSZE INFORMACJE</p><h1>Dokumenty i bezpieczeństwo</h1><p class="muted">Linki do rezerwacji oraz kontakty dostępne dla całej grupy.</p></div></div>
+          <div class="page-heading"><div><p class="eyebrow teal">BEZPIECZEŃSTWO</p><h1>Dokumenty i SOS</h1><p class="muted">Najważniejsze dane dostępne także offline.</p></div></div>
+          <section class="sos-card" aria-label="Numer alarmowy w Unii Europejskiej"><div><small>NUMER ALARMOWY W UE</small><strong>112</strong><span>Policja · pogotowie · straż pożarna</span></div><a class="btn sos-call" href="tel:112">☎ Zadzwoń</a></section>
           <div class="resource-columns">
-            <section><div class="section-title"><div><h2>Dokumenty wyjazdu</h2><p class="muted">Dodawaj wyłącznie bezpieczne linki — bez skanów dowodów.</p></div><button id="addDocumentBtn" class="btn primary admin-only">+ Dodaj link</button></div><div id="documentsGrid" class="resource-grid"></div></section>
+            <section><div class="section-title"><div><h2>Dokumenty offline</h2><p class="muted">Bezpieczne linki i potwierdzenia — bez skanów dowodów.</p></div><button id="addDocumentBtn" class="btn primary admin-only">+ Dodaj link</button></div><div id="documentsGrid" class="resource-grid"></div></section>
             <section><div class="section-title"><div><h2>Kontakty awaryjne</h2><p class="muted">Numery do użycia w trasie i na miejscu.</p></div><button id="addEmergencyBtn" class="btn primary admin-only">+ Dodaj kontakt</button></div><div id="emergencyGrid" class="resource-grid"></div></section>
           </div>
         </section>
@@ -165,14 +162,20 @@
         </section>
 
         <section id="view-settings" class="view admin-only">
-          <div class="page-heading"><div><p class="eyebrow teal">ADMINISTRACJA</p><h1>Dane wyjazdu</h1><p class="muted">Zmiany są widoczne od razu w całym panelu.</p></div></div>
-          <form id="tripForm" class="card form-grid"><label>Nazwa wyjazdu<input id="tripName" required></label><label>Miejsce docelowe<input id="tripDestination" required></label><label>Data wyjazdu<input id="tripStart" type="date" required></label><label>Data powrotu<input id="tripEnd" type="date" required></label><label>Liczba uczestników<input id="tripPeople" type="number" min="1" required></label><label>Budżet grupy (zł)<input id="tripBudget" type="number" min="0" step="1" required></label><label class="wide">Opis<textarea id="tripDescription" rows="3"></textarea></label><div class="wide form-actions"><button class="btn primary" type="submit">Zapisz dane wyjazdu</button></div></form>
+          <div class="page-heading"><div><p class="eyebrow teal">USTAWIENIA</p><h1>Dane wyjazdu</h1><p class="muted">Podstawowe informacje wspólne dla całej grupy.</p></div></div>
+          <form id="tripForm" class="trip-settings-grid">
+            <section class="card trip-settings-card"><h2>Termin i miejsce</h2><label>Nazwa wyjazdu<input id="tripName" required></label><label>Miejsce docelowe<input id="tripDestination" required></label></section>
+            <section class="card trip-settings-card"><h2>Daty podróży</h2><label>Data wyjazdu<input id="tripStart" type="date" required></label><label>Data powrotu<input id="tripEnd" type="date" required></label></section>
+            <section class="card trip-settings-card"><h2>Grupa i budżet</h2><label>Liczba uczestników<input id="tripPeople" type="number" min="1" required></label><label>Budżet grupy (zł)<input id="tripBudget" type="number" min="0" step="1" required></label></section>
+            <section class="card trip-settings-card"><h2>Informacje dodatkowe</h2><label>Opis<textarea id="tripDescription" rows="4"></textarea></label></section>
+            <div class="trip-settings-actions"><button class="btn primary" type="submit">Zapisz dane wyjazdu</button></div>
+          </form>
         </section>
       </main>
     </div>
     <button id="sidebarScrim" class="sidebar-scrim" type="button" aria-label="Zamknij menu"></button>
     <nav class="mobile-nav" aria-label="Główna nawigacja mobilna">
-      <button data-view="dashboard" class="active"><span>⌂</span><small>Pulpit</small></button>
+      <button data-view="dashboard" class="active"><span>●</span><small>Pulpit</small></button>
       <button data-view="expenses"><span>↗</span><small>Wydatki</small></button>
       <button data-view="checklist"><span>✓</span><small>Lista</small></button>
       <button data-view="attractions"><span>♡</span><small>Atrakcje</small></button>
