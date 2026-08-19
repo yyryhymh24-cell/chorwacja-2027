@@ -445,6 +445,7 @@ function renderDashboard() {
   $('#statTasks').textContent = `${completed} z ${tasks.length} zadań`;
   $('#donutPercent').textContent = `${percent}%`;
   $('#budgetDonut').style.setProperty('--percent', `${percent * 3.6}deg`);
+  $('#budgetDonut').style.setProperty('--percent-width', `${percent}%`);
   $('#legendSpent').textContent = money(summary.paid);
   $('#legendPlanned').textContent = money(Math.max(0, summary.planned - summary.paid));
   $('#legendFree').textContent = money(Math.max(0, data.trip.budget - summary.planned));
@@ -508,7 +509,7 @@ function renderAttractions() {
       <p class="attraction-description">${escapeHtml(item.description || 'Brak dodatkowego opisu.')}</p>
       ${link ? `<a class="attraction-link" href="${escapeHtml(link)}" target="_blank" rel="noopener">Otwórz link ↗</a>` : ''}
       <div class="attraction-price">${money(item.price)} razem <span>· ${money(item.price / participants)}/os.</span></div>
-      <div class="attraction-footer"><button class="attraction-like ${liked ? 'active' : ''}" data-toggle-attraction-like="${item.id}">${liked ? 'Cofnij like' : 'Dodaj like'}</button><p class="attraction-likers">❤️ ${item.likes.length}${likerNames ? ` — ${escapeHtml(likerNames)}` : ''}</p></div>
+      <div class="attraction-footer"><button class="attraction-like ${liked ? 'active' : ''}" data-toggle-attraction-like="${item.id}">${liked ? '♥' : '♡'} ${item.likes.length}</button><p class="attraction-likers">${likerNames ? escapeHtml(likerNames) : 'Nikt jeszcze nie polubił'}</p></div>
     </article>`;
   }).join('');
 }
@@ -741,8 +742,26 @@ function renderSettings() {
 function navigate(name) {
   if (!appStarted && !currentUser) return;
   if (name === 'settings' && !isAdmin()) name = 'dashboard';
+  const viewNames = {
+    dashboard: 'Chorwacja 2027',
+    expenses: 'Wydatki',
+    payments: 'Wpłaty',
+    checklist: 'Checklista',
+    attractions: 'Atrakcje',
+    drivers: 'Grafik kierowców',
+    resources: 'Dokumenty i SOS',
+    plan: 'Plan podróży',
+    route: 'Trasa i paliwo',
+    links: 'Przydatne linki',
+    settings: 'Dane wyjazdu'
+  };
+  document.body.dataset.currentView = name;
+  $('#menuBtn').textContent = name === 'dashboard' ? 'C' : '‹';
+  $('#menuBtn').setAttribute('aria-label', name === 'dashboard' ? 'Chorwacja 2027' : 'Wróć do pulpitu');
+  $('#mobileViewTitle strong').textContent = viewNames[name] || 'Chorwacja 2027';
+  $('#mobileViewTitle span').textContent = name === 'dashboard' ? '15–24 czerwca' : '';
   $$('.view').forEach(view => view.classList.toggle('active', view.id === `view-${name}`));
-  $$('#mainNav button').forEach(button => button.classList.toggle('active', button.dataset.view === name));
+  $$('[data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === name));
   $('#sidebar').classList.remove('open');
   if (name === 'route') requestAnimationFrame(() => setTimeout(renderInteractiveMap, 0));
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -945,6 +964,11 @@ async function syncTaskAssignees(taskId, desiredIds, previousIds = []) {
 }
 
 $('#mainNav').addEventListener('click', event => {
+  const button = event.target.closest('[data-view]');
+  if (button) navigate(button.dataset.view);
+});
+
+$('.mobile-nav').addEventListener('click', event => {
   const button = event.target.closest('[data-view]');
   if (button) navigate(button.dataset.view);
 });
@@ -1362,7 +1386,15 @@ $('#confirmOk').onclick = async () => {
 };
 $('#userBtn').onclick = event => { event.stopPropagation(); $('#userDropdown').classList.toggle('hidden'); };
 document.addEventListener('click', () => $('#userDropdown').classList.add('hidden'));
-$('#menuBtn').onclick = () => $('#sidebar').classList.toggle('open');
+$('#menuBtn').onclick = () => {
+  if (window.matchMedia('(max-width: 800px)').matches) {
+    if (document.body.dataset.currentView !== 'dashboard') navigate('dashboard');
+    return;
+  }
+  $('#sidebar').classList.toggle('open');
+};
+$('#mobileMoreBtn').onclick = () => $('#sidebar').classList.add('open');
+$('#sidebarScrim').onclick = () => $('#sidebar').classList.remove('open');
 $('#retrySync').onclick = async () => {
   try {
     await loadNormalizedData();
