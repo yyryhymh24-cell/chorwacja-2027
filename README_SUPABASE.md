@@ -20,7 +20,7 @@ W Supabase otwórz **Authentication → URL Configuration** i ustaw:
 
 ## 2. Utwórz konta sześciu uczestników
 
-W **Authentication → Users** wybierz **Invite user** i zaproś kolejno Dominikę, Agnieszkę, Michała, Karolinę, Damiana i Krzysia na ich prawdziwe adresy e-mail.
+W **Authentication → Users** wybierz **Invite user** i zaproś uczestników, którzy jeszcze nie mają konta: użyj ich potwierdzonych adresów. W aktualnym składzie Kamil zastąpił Michała. Dopóki nie znasz adresu Kamila, pozostaw jego wpis jako oczekujący — nie podawaj adresu zastępczego.
 
 Nie dodawaj użytkowników ręcznie poleceniem SQL do `auth.users`. Supabase powinien utworzyć ich przez panel Auth i wysłać wiadomość z linkiem.
 

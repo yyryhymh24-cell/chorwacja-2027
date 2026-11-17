@@ -64,7 +64,7 @@
     <div class="main-shell">
       <header class="topbar">
         <button id="menuBtn" class="icon-btn menu-btn" aria-label="Otwórz menu">☰</button>
-        <div id="mobileViewTitle" class="mobile-view-title"><strong>Chorwacja 2027</strong><span>15–24 czerwca</span></div>
+        <div id="mobileViewTitle" class="mobile-view-title"><strong>Chorwacja 2027</strong><span></span></div>
         <div class="top-trip"><strong id="topTripName">Chorwacja 2027</strong><span id="topDates">15–24 czerwca 2027</span></div>
         <div class="top-actions">
           <span id="rolePill" class="role-pill"></span>
@@ -76,7 +76,10 @@
       <main class="content">
 
         <section id="view-dashboard" class="view active">
-          <div class="page-heading"><div><p class="eyebrow teal">PODSUMOWANIE WYJAZDU</p><h1>Hej, <span id="welcomeName"></span>! 👋</h1><p class="muted">Zobacz, jak idą przygotowania do Makarskiej.</p></div><div class="countdown"><small>DO WYJAZDU</small><strong id="daysLeft">—</strong><span>dni</span></div></div>
+          <header class="page-heading trip-hero">
+            <div><p class="eyebrow" id="heroDestination"></p><h1>Hej, <span id="welcomeName"></span>!</h1><p class="hero-dates" id="heroDates"></p></div>
+            <div class="countdown"><small id="countdownLabel">DO WYJAZDU</small><strong id="daysLeft">—</strong><span id="countdownUnit">dni</span></div>
+          </header>
           <div class="stats-grid">
             <article class="stat-card"><div class="stat-icon mint">⌁</div><div><span>Budżet grupy</span><strong id="statBudget"></strong><small id="statPerPerson"></small></div></article>
             <article class="stat-card"><div class="stat-icon coral">↗</div><div><span>Wydano</span><strong id="statSpent"></strong><small id="statRemaining"></small></div></article>
@@ -87,7 +90,10 @@
             <article class="card budget-card"><div class="card-header"><div><p class="eyebrow teal">BUDŻET</p><h2>Stan finansów</h2></div><button class="link-button" data-goto="expenses">Szczegóły →</button></div><div class="budget-visual"><div class="donut" id="budgetDonut"><div><strong id="donutPercent"></strong><span>wykorzystano</span></div></div><div class="budget-legend"><div><i class="dot spent"></i><span>Wydano</span><strong id="legendSpent"></strong></div><div><i class="dot planned"></i><span>Zaplanowane</span><strong id="legendPlanned"></strong></div><div><i class="dot free"></i><span>Wolne środki</span><strong id="legendFree"></strong></div></div></div></article>
             <article class="card"><div class="card-header"><div><p class="eyebrow teal">NAJBLIŻSZE</p><h2>Plan podróży</h2></div><button class="link-button" data-goto="plan">Cały plan →</button></div><div id="dashboardPlan" class="mini-timeline"></div></article>
             <article class="card payments-preview"><div class="card-header"><div><p class="eyebrow teal">UCZESTNICY</p><h2>Wpłaty grupy</h2></div><button class="link-button" data-goto="payments">Wszystkie →</button></div><div id="dashboardPayments"></div></article>
-            <article class="card"><div class="card-header"><div><p class="eyebrow teal">DO ZROBIENIA</p><h2>Najważniejsze zadania</h2></div><button class="link-button" data-goto="checklist">Checklista →</button></div><div id="dashboardTasks" class="task-preview"></div></article>
+            <article class="card dashboard-tasks"><div class="card-header"><h2>Twoje przygotowania</h2><button class="link-button" data-goto="checklist">Checklista →</button></div>
+              <div class="task-summary"><strong id="myTaskCount"></strong><progress id="myTaskProgress" aria-label="Postęp Twoich zadań"></progress></div>
+              <div id="dashboardTasks" class="task-preview"></div>
+            </article>
           </div>
         </section>
 
@@ -124,10 +130,10 @@
         </section>
 
         <section id="view-resources" class="view">
-          <div class="page-heading"><div><p class="eyebrow teal">BEZPIECZEŃSTWO</p><h1>Dokumenty i SOS</h1><p class="muted">Najważniejsze dane dostępne także offline.</p></div></div>
+          <div class="page-heading"><div><p class="eyebrow teal">BEZPIECZEŃSTWO</p><h1>Dokumenty i SOS</h1><p class="muted">Rezerwacje i kontakty potrzebne w trasie.</p></div></div>
           <section class="sos-card" aria-label="Numer alarmowy w Unii Europejskiej"><div><small>NUMER ALARMOWY W UE</small><strong>112</strong><span>Policja · pogotowie · straż pożarna</span></div><a class="btn sos-call" href="tel:112">☎ Zadzwoń</a></section>
           <div class="resource-columns">
-            <section><div class="section-title"><div><h2>Dokumenty offline</h2><p class="muted">Bezpieczne linki i potwierdzenia — bez skanów dowodów.</p></div><button id="addDocumentBtn" class="btn primary admin-only">+ Dodaj link</button></div><div id="documentsGrid" class="resource-grid"></div></section>
+            <section><div class="section-title"><div><h2>Dokumenty wyjazdu</h2><p class="muted">Linki do rezerwacji i potwierdzeń.</p></div><button id="addDocumentBtn" class="btn primary admin-only">+ Dodaj link</button></div><div id="documentsGrid" class="resource-grid"></div></section>
             <section><div class="section-title"><div><h2>Kontakty awaryjne</h2><p class="muted">Numery do użycia w trasie i na miejscu.</p></div><button id="addEmergencyBtn" class="btn primary admin-only">+ Dodaj kontakt</button></div><div id="emergencyGrid" class="resource-grid"></div></section>
           </div>
         </section>

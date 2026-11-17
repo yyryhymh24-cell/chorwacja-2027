@@ -415,6 +415,12 @@ function renderAll() {
   $('#userAvatar').textContent = initials(currentUser.name);
   $('#topTripName').textContent = data.trip.name;
   $('#topDates').textContent = `${fmtDate(data.trip.start)} – ${fmtDate(data.trip.end)} ${new Date(`${data.trip.end}T12:00:00`).getFullYear()}`;
+  $('#heroDates').textContent = $('#topDates').textContent;
+  $('#heroDestination').textContent = data.trip.destination;
+  if (document.body.dataset.currentView === 'dashboard') {
+    $('#mobileViewTitle strong').textContent = data.trip.name;
+    $('#mobileViewTitle span').textContent = $('#topDates').textContent;
+  }
   $('#accountSummary').innerHTML = `<strong>${escapeHtml(currentUser.name)}</strong><small>${escapeHtml(currentUser.email || '')}</small>`;
   renderDashboard();
   renderExpenses();
@@ -449,8 +455,13 @@ function renderDashboard() {
   $('#legendSpent').textContent = money(summary.paid);
   $('#legendPlanned').textContent = money(Math.max(0, summary.planned - summary.paid));
   $('#legendFree').textContent = money(Math.max(0, data.trip.budget - summary.planned));
-  const days = Math.ceil((new Date(`${data.trip.start}T12:00:00`) - new Date()) / 86400000);
-  $('#daysLeft').textContent = Math.max(0, days);
+  const today = new Date();
+  const todayMs = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  const days = (Date.parse(data.trip.start) - todayMs) / 86400000;
+  const ended = todayMs > Date.parse(data.trip.end);
+  $('#daysLeft').textContent = ended ? 'Zakończony' : days > 0 ? days : 1 - days;
+  $('#countdownLabel').textContent = ended ? 'WYJAZD' : days > 0 ? 'DO WYJAZDU' : 'DZIEŃ PODRÓŻY';
+  $('#countdownUnit').textContent = days > 1 ? 'dni' : days === 1 ? 'dzień' : '';
   $('#dashboardPlan').innerHTML = [...data.plan].sort((a, b) => a.day - b.day).slice(0, 3).map(item => `
     <div class="mini-plan"><div class="day-badge">D${item.day}</div><div><strong>${escapeHtml(item.title)}</strong><span>${fmtDate(item.date)} · ${escapeHtml(item.description.slice(0, 62))}${item.description.length > 62 ? '…' : ''}</span></div></div>
   `).join('');
@@ -459,9 +470,15 @@ function renderDashboard() {
     const progress = Math.min(100, Math.round(value / perPerson * 100) || 0);
     return `<div class="payment-row"><span class="avatar">${initials(user.name)}</span><div class="payment-meta"><div><strong>${escapeHtml(user.name)}</strong><span>${money(value)}</span></div><div class="progress"><i style="width:${progress}%"></i></div></div><strong>${progress}%</strong></div>`;
   }).join('');
-  $('#dashboardTasks').innerHTML = tasks.slice(0, 4).map(task => `
-    <label class="preview-task"><input type="checkbox" data-task-toggle="${task.id}" ${taskDone(task) ? 'checked' : ''}><span>${escapeHtml(task.title)}</span></label>
-  `).join('') || '<p class="muted">Brak zadań.</p>';
+  const mine = tasks.filter(task => taskTargets(task).includes(currentUser.id));
+  const pending = mine.filter(task => !taskDone(task))
+    .sort((a, b) => (a.deadline || '9999').localeCompare(b.deadline || '9999'));
+  $('#myTaskCount').textContent = `Wykonane: ${mine.length - pending.length} z ${mine.length}`;
+  $('#myTaskProgress').max = Math.max(1, mine.length);
+  $('#myTaskProgress').value = mine.length - pending.length;
+  $('#dashboardTasks').innerHTML = pending.slice(0, 4).map(task => `
+    <label class="preview-task"><input type="checkbox" data-task-toggle="${task.id}"><span>${escapeHtml(task.title)}</span>${task.deadline ? `<small>do ${fmtDate(task.deadline)}</small>` : ''}</label>
+  `).join('') || `<p class="muted">${mine.length ? 'Wszystkie Twoje zadania są gotowe.' : 'Nie masz jeszcze przypisanych zadań.'}</p>`;
 }
 
 function renderExpenses() {
@@ -758,8 +775,9 @@ function navigate(name) {
   document.body.dataset.currentView = name;
   $('#menuBtn').textContent = name === 'dashboard' ? 'C' : '‹';
   $('#menuBtn').setAttribute('aria-label', name === 'dashboard' ? 'Chorwacja 2027' : 'Wróć do pulpitu');
-  $('#mobileViewTitle strong').textContent = viewNames[name] || 'Chorwacja 2027';
-  $('#mobileViewTitle span').textContent = name === 'dashboard' ? '15–24 czerwca' : '';
+  $('#mobileViewTitle strong').textContent = name === 'dashboard' ? data.trip.name : viewNames[name];
+  $('#mobileViewTitle span').textContent = name === 'dashboard' ? $('#topDates').textContent : '';
+  $('#mobileMoreBtn').classList.toggle('active', !['dashboard', 'expenses', 'checklist', 'attractions'].includes(name));
   $$('.view').forEach(view => view.classList.toggle('active', view.id === `view-${name}`));
   $$('[data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === name));
   $('#sidebar').classList.remove('open');
