@@ -10,7 +10,7 @@ with participant_emails(legacy_key, email) as (
   values
     ('u1', 'WPISZ_EMAIL_DOMINIKI'),
     ('u2', 'WPISZ_EMAIL_AGNIESZKI'),
-    ('u3', 'WPISZ_EMAIL_MICHALA'),
+    ('kamil', 'WPISZ_EMAIL_KAMILA'),
     ('u4', 'WPISZ_EMAIL_KAROLINY'),
     ('u5', 'WPISZ_EMAIL_DAMIANA'),
     ('u6', 'WPISZ_EMAIL_KRZYSIA')
@@ -31,7 +31,9 @@ set
 from resolved
 where member.trip_id = '00000000-0000-0000-0000-000000002027'
   and member.legacy_key = resolved.legacy_key
-  and member.role = 'user';
+  and member.role = 'user'
+  and member.status = 'pending'
+  and member.auth_user_id is null;
 
 commit;
 
